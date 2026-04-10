@@ -1,0 +1,4 @@
+playwright>=1.44
+beautifulsoup4>=4.12
+supabase>=2.5
+python-dotenv>=1.0
