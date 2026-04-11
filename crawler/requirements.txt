@@ -1,4 +1,6 @@
-playwright>=1.44
-beautifulsoup4>=4.12
+httpx>=0.27
 supabase>=2.5
 python-dotenv>=1.0
+# 추후 네이버/인스타 Playwright 소스 붙일 때 다시 활성화:
+# playwright>=1.44
+# beautifulsoup4>=4.12
