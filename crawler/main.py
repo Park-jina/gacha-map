@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 
 from sources import kakao, naver
 from sources.kakao import dedupe_by_name_address, detect_brand
-from storage import backfill_brands, upsert_shops
+from storage import backfill_brands, backfill_contact, upsert_shops
 
 
 SOURCES: Dict[str, Callable[[], List[Dict]]] = {
@@ -62,6 +62,11 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="수집은 건너뛰고, 기존 DB 행의 brand(NULL) 를 이름에서 재탐지해 채움",
     )
+    parser.add_argument(
+        "--backfill-contact",
+        action="store_true",
+        help="신규 insert 없이, 수집 데이터의 phone/category 만 기존 행(NULL) 에 채움",
+    )
     return parser.parse_args()
 
 
@@ -89,6 +94,10 @@ def main() -> int:
     before = len(collected)
     collected = dedupe_by_name_address(collected)
     print(f"\n[dedupe] {before}건 → {len(collected)}건")
+
+    if args.backfill_contact:
+        backfill_contact(collected, dry_run=args.dry_run)
+        return 0
 
     upsert_shops(collected, dry_run=args.dry_run)
     return 0

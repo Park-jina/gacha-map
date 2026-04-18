@@ -149,3 +149,78 @@ def backfill_brands(
         written += 1
     print(f"[backfill] 업데이트 완료: {written}건")
     return written
+
+
+def backfill_contact(shops: List[Dict], *, dry_run: bool = False) -> int:
+    """수집한 shops 의 phone/category 를 기존 DB 행에 백필.
+
+    - (name, address) 기준으로 매칭.
+    - 컬럼이 NULL 인 경우에만 채운다 (사람이 손본 값 보존).
+    - lat/lng/brand/verified 등 다른 필드는 절대 건드리지 않는다.
+    """
+    if not shops:
+        print("[backfill-contact] 입력 shops 없음")
+        return 0
+
+    incoming: Dict[tuple[str, str], Dict[str, Optional[str]]] = {}
+    for s in shops:
+        name = (s.get("name") or "").strip()
+        addr = (s.get("address") or "").strip()
+        if not name or not addr:
+            continue
+        phone = (s.get("phone") or "").strip() or None
+        category = (s.get("category") or "").strip() or None
+        if phone is None and category is None:
+            continue
+        key = (name, addr)
+        prev = incoming.get(key)
+        if prev is None:
+            incoming[key] = {"phone": phone, "category": category}
+        else:
+            prev["phone"] = prev["phone"] or phone
+            prev["category"] = prev["category"] or category
+
+    print(f"[backfill-contact] 매칭 후보(수집측): {len(incoming)}건")
+
+    client = _client()
+    res = client.table("shops").select("id,name,address,phone,category").execute()
+    rows = res.data or []
+    print(f"[backfill-contact] DB shops 스캔: {len(rows)}건")
+
+    updates: List[Dict] = []
+    for row in rows:
+        key = ((row.get("name") or "").strip(), (row.get("address") or "").strip())
+        match = incoming.get(key)
+        if not match:
+            continue
+        payload: Dict[str, str] = {}
+        if row.get("phone") is None and match.get("phone"):
+            payload["phone"] = match["phone"]
+        if row.get("category") is None and match.get("category"):
+            payload["category"] = match["category"]
+        if payload:
+            updates.append({"id": row["id"], "name": row["name"], **payload})
+
+    phone_n = sum(1 for u in updates if "phone" in u)
+    cat_n = sum(1 for u in updates if "category" in u)
+    print(
+        f"[backfill-contact] 업데이트 대상: {len(updates)}건 "
+        f"(phone {phone_n}, category {cat_n})"
+    )
+    for u in updates[:10]:
+        cols = ", ".join(f"{k}={v}" for k, v in u.items() if k not in ("id", "name"))
+        print(f"  - {u['name']} → {cols}")
+    if len(updates) > 10:
+        print(f"  ... 외 {len(updates) - 10}건")
+
+    if dry_run:
+        print("[backfill-contact] DRY-RUN: DB에 쓰지 않음")
+        return len(updates)
+
+    written = 0
+    for u in updates:
+        payload = {k: v for k, v in u.items() if k not in ("id", "name")}
+        client.table("shops").update(payload).eq("id", u["id"]).execute()
+        written += 1
+    print(f"[backfill-contact] 업데이트 완료: {written}건")
+    return written
