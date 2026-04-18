@@ -15,7 +15,17 @@ from typing import Callable, Dict, List, Optional
 from supabase import create_client
 
 
-ALLOWED_COLUMNS = {"name", "address", "lat", "lng", "brand", "source", "verified"}
+ALLOWED_COLUMNS = {
+    "name",
+    "address",
+    "lat",
+    "lng",
+    "brand",
+    "source",
+    "verified",
+    "phone",
+    "category",
+}
 
 
 def _client():
@@ -32,7 +42,9 @@ def upsert_shops(shops: List[Dict], *, dry_run: bool = False) -> int:
     """shops 리스트를 Supabase에 upsert (ignore duplicates).
 
     Args:
-        shops: 삽입할 shop 딕셔너리 리스트. ALLOWED_COLUMNS 외 키는 제거됨.
+        shops: 삽입할 shop 딕셔너리 리스트. ALLOWED_COLUMNS 외 키는 DB 전송 시 제거됨.
+            dry-run 출력에서는 제거 전 원본 필드(phone, category 등)도 함께 표시해
+            스키마 확장 후보를 가시화한다.
         dry_run: True면 DB에 쓰지 않고 카운트만 반환.
 
     Returns:
@@ -42,16 +54,32 @@ def upsert_shops(shops: List[Dict], *, dry_run: bool = False) -> int:
         print("[storage] 저장할 샵 없음")
         return 0
 
-    rows = [_sanitize(s) for s in shops]
-    rows = [r for r in rows if r]
+    paired: List[tuple[Dict, Dict]] = []
+    for s in shops:
+        sanitized = _sanitize(s)
+        if sanitized:
+            paired.append((sanitized, s))
 
     if dry_run:
-        print(f"[storage] DRY-RUN: {len(rows)}건 (DB에 쓰지 않음)")
-        for i, r in enumerate(rows, start=1):
-            brand = f" [{r['brand']}]" if r.get("brand") else ""
-            print(f"  {i:>3}. {r['name']}{brand} | {r['address']}")
-        return len(rows)
+        print(f"[storage] DRY-RUN: {len(paired)}건 (DB에 쓰지 않음)")
+        extras_count: Dict[str, int] = {}
+        for i, (row, original) in enumerate(paired, start=1):
+            brand = f" [{row['brand']}]" if row.get("brand") else ""
+            extras = {k: v for k, v in original.items() if k not in ALLOWED_COLUMNS}
+            extra_str = (
+                " | " + ", ".join(f"{k}={v}" for k, v in extras.items())
+                if extras
+                else ""
+            )
+            print(f"  {i:>3}. {row['name']}{brand} | {row['address']}{extra_str}")
+            for k in extras:
+                extras_count[k] = extras_count.get(k, 0) + 1
+        if extras_count:
+            parts = ", ".join(f"{k}: {v}" for k, v in sorted(extras_count.items()))
+            print(f"[storage] 스키마 밖 필드(확장 후보): {parts}")
+        return len(paired)
 
+    rows = [row for row, _ in paired]
     client = _client()
     # ignore_duplicates=True → 기존 행은 건드리지 않고 새 행만 추가.
     # 사람이 verified 로 승격한 데이터를 크롤러가 되돌리지 못하게 막는다.

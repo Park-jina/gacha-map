@@ -51,14 +51,33 @@ export default function ShopDetailPanel({ shop, onBack }: ShopDetailPanelProps) 
             </span>
           )}
         </div>
-        {shop.brand && (
-          <span className="mt-2 inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-            {shop.brand}
-          </span>
+        {(shop.brand || shop.category) && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {shop.brand && (
+              <span className="inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                {shop.brand}
+              </span>
+            )}
+            {shop.category && (
+              <span className="text-xs text-zinc-500 dark:text-zinc-500">
+                {shop.category}
+              </span>
+            )}
+          </div>
         )}
         <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-300">
           {shop.address}
         </p>
+        {shop.phone && (
+          <p className="mt-1 text-sm">
+            <a
+              href={`tel:${shop.phone.replace(/[^0-9+]/g, "")}`}
+              className="text-indigo-600 hover:underline dark:text-indigo-400"
+            >
+              {shop.phone}
+            </a>
+          </p>
+        )}
       </div>
 
       <div className="flex gap-2 px-4 pb-4">

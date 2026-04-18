@@ -1,13 +1,15 @@
 """가챠샵 크롤러 엔트리포인트.
 
 사용법:
-    python crawler/main.py                    # 카카오 로컬 API 수집 → Supabase upsert
+    python crawler/main.py                    # 모든 소스 수집 → Supabase upsert
     python crawler/main.py --dry-run          # Supabase에 쓰지 않고 결과만 출력
-    python crawler/main.py --source kakao     # 특정 소스만 실행
+    python crawler/main.py --source kakao     # 특정 소스만 실행 (kakao | naver)
     python crawler/main.py --backfill-brands  # 기존 행의 brand(NULL) 재탐지 업데이트
 
 환경변수:
     KAKAO_REST_API_KEY        — 카카오 로컬 REST API 키
+    NAVER_CLIENT_ID           — 네이버 Developers 애플리케이션 Client ID
+    NAVER_CLIENT_SECRET       — 네이버 Developers 애플리케이션 Client Secret
     SUPABASE_URL              — Supabase 프로젝트 URL
     SUPABASE_SERVICE_ROLE_KEY — Supabase service role 키 (쓰기 권한)
 """
@@ -21,15 +23,15 @@ from typing import Callable, Dict, List
 
 from dotenv import load_dotenv
 
-from sources import kakao
+from sources import kakao, naver
 from sources.kakao import dedupe_by_name_address, detect_brand
 from storage import backfill_brands, upsert_shops
 
 
 SOURCES: Dict[str, Callable[[], List[Dict]]] = {
     "kakao": kakao.crawl,
-    # "naver": naver.crawl,       # TODO: Playwright 기반 보조 소스
-    # "instagram": instagram.crawl,
+    "naver": naver.crawl,
+    # "instagram": instagram.crawl,  # 보류 (ToS / 유지보수 비용)
 }
 
 

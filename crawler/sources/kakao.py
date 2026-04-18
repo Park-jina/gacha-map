@@ -190,7 +190,7 @@ def _to_shop(doc: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         return None
 
     brand = _detect_brand(name)
-    return {
+    shop: Dict[str, Any] = {
         "name": name,
         "address": address,
         "lat": lat,
@@ -199,6 +199,13 @@ def _to_shop(doc: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "source": SOURCE_NAME,
         "verified": False,
     }
+    phone = (doc.get("phone") or "").strip()
+    if phone:
+        shop["phone"] = phone
+    category = (doc.get("category_name") or "").strip()
+    if category:
+        shop["category"] = category
+    return shop
 
 
 def detect_brand(name: str) -> Optional[str]:
