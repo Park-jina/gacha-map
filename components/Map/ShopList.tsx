@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef } from "react";
 import type { Shop } from "@/types/shop";
 
@@ -50,7 +49,7 @@ export default function ShopList({
             onMouseEnter={() => onHover(shop.id)}
             onMouseLeave={() => onHover(null)}
             className={[
-              "group relative cursor-pointer transition-colors",
+              "relative cursor-pointer transition-colors",
               isSelected
                 ? "bg-indigo-50 dark:bg-indigo-950/40"
                 : isHovered
@@ -79,13 +78,6 @@ export default function ShopList({
               </div>
               <span className="text-sm text-zinc-500">{shop.address}</span>
             </button>
-            <Link
-              href={`/shops/${shop.id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs text-zinc-500 opacity-0 transition-opacity hover:bg-zinc-100 hover:text-zinc-900 group-hover:opacity-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-            >
-              상세 →
-            </Link>
           </li>
         );
       })}

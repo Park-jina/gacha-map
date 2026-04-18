@@ -13,6 +13,10 @@ export async function fetchShopById(id: string): Promise<Shop | null> {
     .select("*")
     .eq("id", id)
     .maybeSingle();
-  if (error) throw error;
+  // invalid UUID (22P02)는 "없는 id" 로 취급해 notFound() 가 뜨도록.
+  if (error) {
+    if (error.code === "22P02") return null;
+    throw error;
+  }
   return data;
 }

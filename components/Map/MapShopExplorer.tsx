@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Shop } from "@/types/shop";
 import KakaoMap, { type MapBounds } from "./KakaoMap";
 import ShopList from "./ShopList";
+import ShopDetailPanel from "./ShopDetailPanel";
 import FilterBar from "./FilterBar";
 
 interface MapShopExplorerProps {
   shops: Shop[];
+  initialSelectedShopId?: string | null;
 }
 
 /**
@@ -17,17 +19,47 @@ interface MapShopExplorerProps {
  *   전체 shops
  *     → brand/verified 필터링 → filteredShops (지도 마커 기준)
  *     → viewport(bounds) 필터링 → visibleShops (리스트 표시 기준)
+ *
+ * 선택 상태가 있을 땐 리스트 대신 상세 패널을 보여주고,
+ * URL도 /shops/[id] 로 history.replaceState 동기화한다 (딥링크 공유 가능).
  */
-export default function MapShopExplorer({ shops }: MapShopExplorerProps) {
-  const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
+export default function MapShopExplorer({
+  shops,
+  initialSelectedShopId = null,
+}: MapShopExplorerProps) {
+  const [selectedShopId, setSelectedShopId] = useState<string | null>(
+    initialSelectedShopId,
+  );
   const [hoveredShopId, setHoveredShopId] = useState<string | null>(null);
   const [bounds, setBounds] = useState<MapBounds | null>(null);
 
   const [selectedBrands, setSelectedBrands] = useState<Set<string>>(new Set());
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
+  // 선택이 바뀌면 URL도 동기화 — 페이지 네비게이션 없이 pushState/replaceState만.
+  useEffect(() => {
+    const target = selectedShopId ? `/shops/${selectedShopId}` : "/";
+    if (window.location.pathname !== target) {
+      window.history.replaceState(null, "", target);
+    }
+  }, [selectedShopId]);
+
+  // 브라우저 뒤로/앞으로 이동 시 URL → 선택 상태 재동기화.
+  useEffect(() => {
+    const handlePopState = () => {
+      const match = window.location.pathname.match(/^\/shops\/([^/]+)/);
+      setSelectedShopId(match?.[1] ?? null);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   const handleSelect = useCallback((shopId: string) => {
     setSelectedShopId((prev) => (prev === shopId ? prev : shopId));
+  }, []);
+
+  const handleBack = useCallback(() => {
+    setSelectedShopId(null);
   }, []);
 
   const handleHover = useCallback((shopId: string | null) => {
@@ -91,6 +123,11 @@ export default function MapShopExplorer({ shops }: MapShopExplorerProps) {
     );
   }, [filteredShops, bounds]);
 
+  const selectedShop = useMemo(
+    () => (selectedShopId ? shops.find((s) => s.id === selectedShopId) : null),
+    [shops, selectedShopId],
+  );
+
   const totalCount = shops.length;
   const filteredCount = filteredShops.length;
   const visibleCount = visibleShops.length;
@@ -108,44 +145,50 @@ export default function MapShopExplorer({ shops }: MapShopExplorerProps) {
         />
       </section>
       <aside className="h-1/2 w-full overflow-y-auto border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black md:h-full md:w-96 md:border-l md:border-t-0">
-        <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white px-4 pb-3 pt-3 dark:border-zinc-800 dark:bg-black">
-          <h1 className="text-lg font-semibold">가챠맵</h1>
-          <p className="text-xs text-zinc-500">
-            지도에 {visibleCount}곳
-            {hasActiveFilter && (
-              <span className="ml-1 text-zinc-400">
-                / 필터 {filteredCount}곳
-              </span>
-            )}
-            {visibleCount !== totalCount && (
-              <span className="ml-1 text-zinc-400">
-                / 전체 {totalCount}곳
-              </span>
-            )}
-          </p>
-          <FilterBar
-            brandOptions={brandOptions}
-            selectedBrands={selectedBrands}
-            verifiedOnly={verifiedOnly}
-            onToggleBrand={handleToggleBrand}
-            onClearBrands={handleClearBrands}
-            onToggleVerified={handleToggleVerified}
-          />
-        </header>
-        <ShopList
-          shops={visibleShops}
-          selectedShopId={selectedShopId}
-          hoveredShopId={hoveredShopId}
-          onSelect={handleSelect}
-          onHover={handleHover}
-          emptyMessage={
-            totalCount === 0
-              ? "등록된 가챠샵이 아직 없어요."
-              : hasActiveFilter && filteredCount === 0
-              ? "필터 조건에 맞는 가챠샵이 없어요."
-              : "이 영역엔 가챠샵이 없어요. 지도를 이동해보세요."
-          }
-        />
+        {selectedShop ? (
+          <ShopDetailPanel shop={selectedShop} onBack={handleBack} />
+        ) : (
+          <>
+            <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white px-4 pb-3 pt-3 dark:border-zinc-800 dark:bg-black">
+              <h1 className="text-lg font-semibold">가챠맵</h1>
+              <p className="text-xs text-zinc-500">
+                지도에 {visibleCount}곳
+                {hasActiveFilter && (
+                  <span className="ml-1 text-zinc-400">
+                    / 필터 {filteredCount}곳
+                  </span>
+                )}
+                {visibleCount !== totalCount && (
+                  <span className="ml-1 text-zinc-400">
+                    / 전체 {totalCount}곳
+                  </span>
+                )}
+              </p>
+              <FilterBar
+                brandOptions={brandOptions}
+                selectedBrands={selectedBrands}
+                verifiedOnly={verifiedOnly}
+                onToggleBrand={handleToggleBrand}
+                onClearBrands={handleClearBrands}
+                onToggleVerified={handleToggleVerified}
+              />
+            </header>
+            <ShopList
+              shops={visibleShops}
+              selectedShopId={selectedShopId}
+              hoveredShopId={hoveredShopId}
+              onSelect={handleSelect}
+              onHover={handleHover}
+              emptyMessage={
+                totalCount === 0
+                  ? "등록된 가챠샵이 아직 없어요."
+                  : hasActiveFilter && filteredCount === 0
+                  ? "필터 조건에 맞는 가챠샵이 없어요."
+                  : "이 영역엔 가챠샵이 없어요. 지도를 이동해보세요."
+              }
+            />
+          </>
+        )}
       </aside>
     </div>
   );
