@@ -51,7 +51,7 @@ export default function ShopList({
             className={[
               "relative cursor-pointer transition-colors",
               isSelected
-                ? "bg-indigo-50 dark:bg-indigo-950/40"
+                ? "bg-brand-subtle"
                 : isHovered
                 ? "bg-zinc-50 dark:bg-zinc-900"
                 : "",
@@ -60,7 +60,7 @@ export default function ShopList({
             {isSelected && (
               <span
                 aria-hidden
-                className="absolute inset-y-0 left-0 w-1 bg-indigo-500"
+                className="absolute inset-y-0 left-0 w-1 bg-brand"
               />
             )}
             <button

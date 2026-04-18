@@ -27,14 +27,14 @@ export default function ShopDetailPanel({ shop, onBack }: ShopDetailPanelProps) 
         <button
           type="button"
           onClick={onBack}
-          className="rounded-md px-2 py-1 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+          className="rounded-md px-2 py-1 text-sm text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
           aria-label="목록으로 돌아가기"
         >
           ← 목록
         </button>
         <Link
           href={`/shops/${shop.id}`}
-          className="ml-auto rounded-md px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+          className="ml-auto rounded-md px-2 py-1 text-xs text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
         >
           상세 페이지 ↗
         </Link>
@@ -72,7 +72,7 @@ export default function ShopDetailPanel({ shop, onBack }: ShopDetailPanelProps) 
           <p className="mt-1 text-sm">
             <a
               href={`tel:${shop.phone.replace(/[^0-9+]/g, "")}`}
-              className="text-indigo-600 hover:underline dark:text-indigo-400"
+              className="text-brand hover:underline"
             >
               {shop.phone}
             </a>
@@ -85,7 +85,7 @@ export default function ShopDetailPanel({ shop, onBack }: ShopDetailPanelProps) 
           href={kakaoMapUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 rounded-md border border-zinc-200 px-3 py-2 text-center text-sm hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
+          className="flex-1 rounded-md border border-zinc-200 px-3 py-2 text-center text-sm transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
         >
           카카오맵
         </a>
@@ -93,7 +93,7 @@ export default function ShopDetailPanel({ shop, onBack }: ShopDetailPanelProps) 
           href={kakaoDirectionsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 rounded-md bg-indigo-600 px-3 py-2 text-center text-sm text-white hover:bg-indigo-700"
+          className="flex-1 rounded-md bg-brand px-3 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-brand-hover"
         >
           길찾기
         </a>
@@ -114,7 +114,7 @@ export default function ShopDetailPanel({ shop, onBack }: ShopDetailPanelProps) 
       <Section title="정보가 다르거나 부족한가요?">
         <a
           href={reportUrl}
-          className="inline-block rounded-md border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+          className="inline-block rounded-md border border-zinc-300 px-3 py-2 text-sm transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
         >
           정보 제보하기 →
         </a>

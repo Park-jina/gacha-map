@@ -36,6 +36,9 @@ export default function MapShopExplorer({
   const [selectedBrands, setSelectedBrands] = useState<Set<string>>(new Set());
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
+  // 모바일 bottom sheet: peek(40vh) ↔ expanded(85vh). 데스크톱에선 의미 없음.
+  const [sheetExpanded, setSheetExpanded] = useState(false);
+
   // 선택이 바뀌면 URL도 동기화 — 페이지 네비게이션 없이 pushState/replaceState만.
   useEffect(() => {
     const target = selectedShopId ? `/shops/${selectedShopId}` : "/";
@@ -53,6 +56,11 @@ export default function MapShopExplorer({
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
+
+  // 모바일에서 상세로 전환되면 시트를 자동으로 확장 (리스트에선 접힌 peek 유지).
+  useEffect(() => {
+    if (selectedShopId) setSheetExpanded(true);
+  }, [selectedShopId]);
 
   const handleSelect = useCallback((shopId: string) => {
     setSelectedShopId((prev) => (prev === shopId ? prev : shopId));
@@ -134,8 +142,8 @@ export default function MapShopExplorer({
   const hasActiveFilter = selectedBrands.size > 0 || verifiedOnly;
 
   return (
-    <div className="flex h-screen flex-col md:flex-row">
-      <section className="relative h-1/2 w-full md:h-full md:flex-1">
+    <div className="relative h-dvh md:flex md:flex-row">
+      <section className="absolute inset-0 md:static md:h-full md:flex-1">
         <KakaoMap
           shops={filteredShops}
           selectedShopId={selectedShopId}
@@ -144,7 +152,23 @@ export default function MapShopExplorer({
           onBoundsChange={handleBoundsChange}
         />
       </section>
-      <aside className="h-1/2 w-full overflow-y-auto border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-black md:h-full md:w-96 md:border-l md:border-t-0">
+      <aside
+        className={[
+          "absolute inset-x-0 bottom-0 z-10 flex flex-col overflow-hidden rounded-t-2xl border border-zinc-200 bg-white shadow-xl transition-[height] duration-300 ease-out dark:border-zinc-800 dark:bg-black",
+          sheetExpanded ? "h-[85dvh]" : "h-[42dvh]",
+          "md:static md:h-full md:w-96 md:rounded-none md:border-l md:border-t md:shadow-none md:transition-none",
+        ].join(" ")}
+      >
+        <button
+          type="button"
+          onClick={() => setSheetExpanded((v) => !v)}
+          className="flex shrink-0 justify-center py-2 md:hidden"
+          aria-label={sheetExpanded ? "패널 접기" : "패널 펼치기"}
+          aria-expanded={sheetExpanded}
+        >
+          <span className="h-1 w-10 rounded-full bg-zinc-300 transition-colors hover:bg-zinc-400 dark:bg-zinc-700 dark:hover:bg-zinc-600" />
+        </button>
+        <div className="flex-1 overflow-y-auto">
         {selectedShop ? (
           <ShopDetailPanel shop={selectedShop} onBack={handleBack} />
         ) : (
@@ -189,6 +213,7 @@ export default function MapShopExplorer({
             />
           </>
         )}
+        </div>
       </aside>
     </div>
   );

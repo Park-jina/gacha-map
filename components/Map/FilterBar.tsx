@@ -75,7 +75,7 @@ export default function FilterBar({
                   className={[
                     "inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs transition-colors",
                     active
-                      ? "border-indigo-500 bg-indigo-500 text-white"
+                      ? "border-brand bg-brand text-white"
                       : "border-zinc-300 bg-white text-zinc-600 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-600",
                   ].join(" ")}
                 >
